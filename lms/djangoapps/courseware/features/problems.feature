@@ -161,4 +161,3 @@ Feature: Answer problems
         | numerical         | 1 point possible   |
         | formula           | 1 point possible   |
         | script            | 2 points possible  |
-        
