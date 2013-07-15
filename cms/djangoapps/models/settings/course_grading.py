@@ -81,7 +81,6 @@ class CourseGradingModel(object):
         Decode the json into CourseGradingModel and save any changes. Returns the modified model.
         Probably not the usual path for updates as it's too coarse grained.
         """
-        print '*'*20
         course_location = jsondict['course_location']
         descriptor = get_modulestore(course_location).get_item(course_location)
         graders_parsed = [CourseGradingModel.parse_grader(jsonele) for jsonele in jsondict['graders']]
@@ -190,15 +189,15 @@ class CourseGradingModel(object):
 
     # NOTE cannot delete cutoffs. May be useful to reset
     @staticmethod
-    def delete_cutoffs(course_location, cutoffs):
+    def delete_cutoffs(course_location):
         """
-        Resets the cutoffs to the defaults
+        Resets the cutoffs to the default values.
         """
         if not isinstance(course_location, Location):
             course_location = Location(course_location)
 
         descriptor = get_modulestore(course_location).get_item(course_location)
-        descriptor.grade_cutoffs = descriptor.defaut_grading_policy['GRADE_CUTOFFS']
+        descriptor.grade_cutoffs = descriptor.default_grading_policy()['GRADE_CUTOFFS']
 
         # Save the data we've just created before we update mongo datastore
         descriptor.save()
@@ -245,7 +244,7 @@ class CourseGradingModel(object):
             del descriptor.lms.format
             del descriptor.lms.graded
 
-        # Save the data we've just created before we update mongo datastore            
+        # Save the data we've just created before we update mongo datastore
         descriptor.save()
         get_modulestore(location).update_metadata(location, descriptor._model_data._kvs._metadata)
 
