@@ -1,11 +1,11 @@
-from mock import MagicMock
+from mock import MagicMock, patch, ANY
 import json
 
 from django.http import Http404, HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.test import TestCase
-from django.test.client import RequestFactory
+from django.test.client import RequestFactory, Client
 from django.test.utils import override_settings
 
 from xmodule.modulestore.django import modulestore
@@ -28,6 +28,20 @@ class ModuleRenderTestCase(LoginEnrollmentTestCase):
         self.location = ['i4x', 'edX', 'toy', 'chapter', 'Overview']
         self.course_id = 'edX/toy/2012_Fall'
         self.toy_course = modulestore().get_course(self.course_id)
+        self.mock_user = UserFactory()
+        self.mock_user.id = 1
+        self.request_factory = RequestFactory()
+
+        # construct a mock module for the modulestore to return
+        self.mock_module = MagicMock()
+        self.mock_module.id = 1
+        self.dispatch = 'score_update'
+
+        # construct a 'standard' xqueue_callback url
+        self.callback_url = reverse('xqueue_callback', kwargs=dict(course_id=self.course_id,
+                                                                   userid=str(self.mock_user.id),
+                                                                   mod_id=self.mock_module.id,
+                                                                   dispatch=self.dispatch))
 
     def test_get_module(self):
         self.assertIsNone(render.get_module('dummyuser', None,
@@ -56,7 +70,7 @@ class ModuleRenderTestCase(LoginEnrollmentTestCase):
         mock_request_3 = MagicMock()
         mock_request_3.POST.copy.return_value = {'position': 1}
         mock_request_3.FILES = False
-        mock_request_3.user = UserFactory()
+        mock_request_3.user = self.mock_user
         inputfile_2 = Stub()
         inputfile_2.size = 1
         inputfile_2.name = 'name'
@@ -86,6 +100,46 @@ class ModuleRenderTestCase(LoginEnrollmentTestCase):
             self.location,
             self.course_id
         )
+
+    def test_xqueue_callback_success(self):
+        """
+        Test for happy-path xqueue_callback
+        """
+        fake_key = 'fake key'
+        xqueue_header = json.dumps({'lms_key': fake_key})
+        data = {
+            'xqueue_header': xqueue_header,
+            'xqueue_body': 'hello world',
+        }
+
+        # patch getmodule to return our mock module
+        with patch('courseware.module_render.find_target_student_module') as get_fake_module:
+            get_fake_module.return_value = self.mock_module
+            # call xqueue_callback with our mocked information
+            request = self.request_factory.post(self.callback_url, data)
+            render.xqueue_callback(request, self.course_id, self.mock_user.id, self.mock_module.id, self.dispatch)
+
+        # verify that handle ajax is called with the correct data
+        request.POST['queuekey'] = fake_key
+        self.mock_module.handle_ajax.assert_called_once_with(self.dispatch, request.POST)
+
+    def test_xqueue_callback_missing_header_info(self):
+        data = {
+            'xqueue_header': '{}',
+            'xqueue_body': 'hello world',
+        }
+
+        with patch('courseware.module_render.find_target_student_module') as get_fake_module:
+            get_fake_module.return_value = self.mock_module
+            # test with missing xqueue data
+            with self.assertRaises(Http404):
+                request = self.request_factory.post(self.callback_url, {})
+                render.xqueue_callback(request, self.course_id, self.mock_user.id, self.mock_module.id, self.dispatch)
+
+            # test with missing xqueue_header
+            with self.assertRaises(Http404):
+                request = self.request_factory.post(self.callback_url, data)
+                render.xqueue_callback(request, self.course_id, self.mock_user.id, self.mock_module.id, self.dispatch)
 
     def test_get_score_bucket(self):
         self.assertEquals(render.get_score_bucket(0, 10), 'incorrect')

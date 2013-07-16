@@ -399,6 +399,26 @@ def get_module_for_descriptor_internal(user, descriptor, model_data_cache, cours
     return module
 
 
+def find_target_student_module(request, user_id, course_id, mod_id):
+    """
+    Retrieve target StudentModule
+    """
+    user = User.objects.get(id=user_id)
+    model_data_cache = ModelDataCache.cache_for_descriptor_descendents(
+        course_id,
+        user,
+        modulestore().get_instance(course_id, mod_id),
+        depth=0,
+        select_for_update=True
+    )
+    instance = get_module(user, request, mod_id, model_data_cache, course_id, grade_bucket_type='xqueue')
+    if instance is None:
+        msg = "No module {0} for user {1}--access denied?".format(mod_id, user)
+        log.debug(msg)
+        raise Http404
+    return instance
+
+
 @csrf_exempt
 def xqueue_callback(request, course_id, userid, mod_id, dispatch):
     '''
@@ -417,20 +437,7 @@ def xqueue_callback(request, course_id, userid, mod_id, dispatch):
     if not isinstance(header, dict) or 'lms_key' not in header:
         raise Http404
 
-    # Retrieve target StudentModule
-    user = User.objects.get(id=userid)
-    model_data_cache = ModelDataCache.cache_for_descriptor_descendents(
-        course_id,
-        user,
-        modulestore().get_instance(course_id, mod_id),
-        depth=0,
-        select_for_update=True
-    )
-    instance = get_module(user, request, mod_id, model_data_cache, course_id, grade_bucket_type='xqueue')
-    if instance is None:
-        msg = "No module {0} for user {1}--access denied?".format(mod_id, user)
-        log.debug(msg)
-        raise Http404
+    instance = find_target_student_module(request, userid, course_id, mod_id)
 
     # Transfer 'queuekey' from xqueue response header to the data.
     # This is required to use the interface defined by 'handle_ajax'
