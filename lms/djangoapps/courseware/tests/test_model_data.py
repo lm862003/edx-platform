@@ -68,10 +68,15 @@ class TestDescriptorFallback(TestCase):
         self.assertRaises(InvalidWriteError, self.kvs.set, settings_key('field_b'), 'foo')
         self.assertEquals('settings', self.desc_md['field_b'])
 
+        self.assertRaises(InvalidWriteError, self.kvs.set_many, {content_key('field_a'): 'foo'})
+        self.assertEquals('content', self.desc_md['field_a'])
+
         self.assertRaises(InvalidWriteError, self.kvs.delete, content_key('field_a'))
         self.assertEquals('content', self.desc_md['field_a'])
         self.assertRaises(InvalidWriteError, self.kvs.delete, settings_key('field_b'))
         self.assertEquals('settings', self.desc_md['field_b'])
+
+
 
 
 class TestInvalidScopes(TestCase):
@@ -85,10 +90,13 @@ class TestInvalidScopes(TestCase):
         for scope in (Scope(user=True, block=BlockScope.DEFINITION),
                       Scope(user=False, block=BlockScope.TYPE),
                       Scope(user=False, block=BlockScope.ALL)):
-            self.assertRaises(InvalidScopeError, self.kvs.get, LmsKeyValueStore.Key(scope, None, None, 'field'))
-            self.assertRaises(InvalidScopeError, self.kvs.set, LmsKeyValueStore.Key(scope, None, None, 'field'), 'value')
-            self.assertRaises(InvalidScopeError, self.kvs.delete, LmsKeyValueStore.Key(scope, None, None, 'field'))
-            self.assertRaises(InvalidScopeError, self.kvs.has, LmsKeyValueStore.Key(scope, None, None, 'field'))
+            key = LmsKeyValueStore.Key(scope, None, None, 'field')
+
+            self.assertRaises(InvalidScopeError, self.kvs.get, key)
+            self.assertRaises(InvalidScopeError, self.kvs.set, key, 'value')
+            self.assertRaises(InvalidScopeError, self.kvs.delete, key)
+            self.assertRaises(InvalidScopeError, self.kvs.has, key)
+            self.assertRaises(InvalidScopeError, self.kvs.set_many, {key: 'value'})
 
 
 class TestStudentModuleStorage(TestCase):
