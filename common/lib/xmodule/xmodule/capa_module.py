@@ -560,14 +560,12 @@ class CapaModule(CapaFields, XModule):
             result = handlers[dispatch](data)
 
         except NotFoundError as err:
-            err_msg = not_found_error_message
             _, _, traceback_obj = sys.exc_info()
-            raise ProcessingError, (err_msg, err), traceback_obj
+            raise ProcessingError, (not_found_error_message, err), traceback_obj
 
         except Exception as err:
-            err_msg = generic_error_message
             _, _, traceback_obj = sys.exc_info()
-            raise ProcessingError, (err_msg, err), traceback_obj
+            raise ProcessingError, (generic_error_message, err), traceback_obj
 
         after = self.get_progress()
 

@@ -10,7 +10,7 @@ from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import Http404
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 import pyparsing
@@ -38,6 +38,7 @@ from courseware.masquerade import setup_masquerade
 from courseware.model_data import LmsKeyValueStore, LmsUsage, ModelDataCache
 from courseware.models import StudentModule
 from util.sandboxing import can_execute_unsafe_code
+from util.json_request import JsonResponse
 
 log = logging.getLogger(__name__)
 
@@ -513,7 +514,7 @@ def modx_dispatch(request, dispatch, location, course_id):
     except ProcessingError as err:
         log.warning("Module encountered an error while processing AJAX call",
                     exc_info=True)
-        return HttpResponse(json.dumps({'success': err.args[0]}))
+        return JsonResponse(object={'success': err.args[0]}, status="200")
 
     # If any other error occurred, re-raise it to trigger a 500 response
     except:
