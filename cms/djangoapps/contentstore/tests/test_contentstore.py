@@ -792,6 +792,29 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
 
         shutil.rmtree(root_dir)
 
+    def test_export_course_with_metadata_only_video(self):
+        module_store = modulestore('direct')
+        draft_store = modulestore('draft')
+        content_store = contentstore()
+
+        import_from_xml(module_store, 'common/test/data/', ['toy'])
+        location = CourseDescriptor.id_to_location('edX/toy/2012_Fall')
+
+        video_location = Location(['i4x', 'edX', 'toy', 'video', 'sample_video', None])
+        # clear out the 'data' field as the new video module has only metadata
+        # this cause the export to throw an exception. Note that we have to clear this explicitly because
+        # it seems like the import functionality above maintains the original XML in the data field
+        module_store.update_item(video_location, "")
+
+        root_dir = path(mkdtemp_clean())
+
+        print 'Exporting to tempdir = {0}'.format(root_dir)
+
+        # export out to a tempdir
+        export_to_xml(module_store, content_store, location, root_dir, 'test_export', draft_modulestore=draft_store)
+
+        shutil.rmtree(root_dir)
+
     def test_course_handouts_rewrites(self):
         module_store = modulestore('direct')
 
