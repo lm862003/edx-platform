@@ -21,13 +21,7 @@ class RawDescriptor(XmlDescriptor, XMLEditingDescriptor):
 
     def definition_to_xml(self, resource_fs):
         try:
-            if self.data is not None and len(self.data) > 0:
-                return etree.fromstring(self.data)
-            else:
-                # certain XModules do not have a payload in 'data' any longer, e.g. the Video XModule
-                # so in that case, we serialize it out simply as an empty XML element named after
-                # the category
-                return etree.fromstring('<{0} />'.format(self.location.category))
+            return etree.fromstring(self.data)
         except etree.XMLSyntaxError as err:
             # Can't recover here, so just add some info and
             # re-raise
