@@ -1,3 +1,6 @@
+"""
+Test for lms courseware app, module data (runtime data storage for XBlocks)
+"""
 import json
 from mock import Mock, patch
 from functools import partial
@@ -219,6 +222,10 @@ class StorageTestBase(object):
     A base class for that gets subclassed when testing each of the scopes.
 
     """
+    # Disable pylint warnings that arise because of the way the child classes call
+    # this base class -- pylint's static analysis can't keep up with it.
+    # pylint: disable=E1101, E1102
+
     factory = None
     scope = None
     key_factory = None

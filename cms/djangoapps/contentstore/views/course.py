@@ -577,7 +577,6 @@ def textbook_by_id(request, org, course, name, tid):
 
     if request.method == 'GET':
         if not textbook:
-            print 'this would be silly?'
             return JsonResponse(status=404)
         return JsonResponse(textbook)
     elif request.method in ('POST', 'PUT'):
@@ -599,7 +598,6 @@ def textbook_by_id(request, org, course, name, tid):
         return JsonResponse(new_textbook, status=201)
     elif request.method == 'DELETE':
         if not textbook:
-            print 'helllllo?'
             return JsonResponse(status=404)
         i = course_module.pdf_textbooks.index(textbook)
         new_textbooks = course_module.pdf_textbooks[0:i]

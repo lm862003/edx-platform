@@ -1,11 +1,14 @@
-from mock import MagicMock, patch, ANY
+"""
+Test for lms courseware app, module render unit
+"""
+from mock import MagicMock, patch
 import json
 
 from django.http import Http404, HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.test import TestCase
-from django.test.client import RequestFactory, Client
+from django.test.client import RequestFactory
 from django.test.utils import override_settings
 
 from xmodule.modulestore.django import modulestore
