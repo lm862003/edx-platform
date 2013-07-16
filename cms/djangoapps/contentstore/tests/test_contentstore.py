@@ -800,11 +800,19 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
         import_from_xml(module_store, 'common/test/data/', ['toy'])
         location = CourseDescriptor.id_to_location('edX/toy/2012_Fall')
 
-        video_location = Location(['i4x', 'edX', 'toy', 'video', 'sample_video', None])
-        # clear out the 'data' field as the new video module has only metadata
-        # this cause the export to throw an exception. Note that we have to clear this explicitly because
-        # it seems like the import functionality above maintains the original XML in the data field
-        module_store.update_item(video_location, "")
+        # create a new video module and add it as a child to a vertical
+        # this re-creates a bug whereby since the video template doesn't have
+        # anything in 'data' field, the export was blowing up
+        verticals = module_store.get_items(['i4x', 'edX', 'toy', 'vertical', None, None])
+
+        self.assertGreater(len(verticals), 0)
+
+        new_component_location = Location('i4x', 'edX', 'toy', 'video', 'new_component')
+        source_template_location = Location('i4x', 'edx', 'templates', 'video', 'default')
+
+        module_store.clone_item(source_template_location, new_component_location)
+        parent = verticals[0]
+        module_store.update_children(parent.location, parent.children + [new_component_location.url()])
 
         root_dir = path(mkdtemp_clean())
 
